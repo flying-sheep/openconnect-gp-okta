@@ -9,7 +9,6 @@ dynamic = ['version', 'description']
 dependencies = [
     'certifi >=2020.12.5',
     'chardet >=3.0.4, <4',
-    'click >=7.1.2',
     'idna >=2.10, <3',
     'lxml >=4.6.3, <5',
     'requests >=2.25.0, <3',
@@ -19,12 +18,13 @@ dependencies = [
 
 [project.optional-dependencies]
 totp = ['pyotp']
+cli = ['typer >=0.4.1']
 
 [project.urls]
 Home = 'https://github.com/zdave/openconnect-gp-okta'
 
 [project.scripts]
-openconnect-gp-okta = 'openconnect_gp_okta:main'
+openconnect-gp-okta = 'openconnect_gp_okta:cli'
 
 [tool.black]
 skip-string-normalization = true

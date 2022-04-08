@@ -20,7 +20,6 @@ from collections.abc import Callable
 from contextlib import AbstractContextManager
 from typing import Any
 
-import click
 import keyring
 import lxml.etree
 import requests
@@ -197,20 +196,13 @@ def popen_forward_sigterm(
                     os.waitid(os.P_PID, p.pid, os.WEXITED | os.WNOWAIT)
 
 
-@click.command()
-@click.argument('gateway')
-@click.argument('openconnect-args', nargs=-1)
-@click.option('--username')
-@click.option('--password')
-@click.option('--totp-key')
-@click.option('--sudo/--no-sudo', default=False)
 def main(
     gateway: str,
-    openconnect_args: list[str],
-    username: str | None,
-    password: str | None,
-    totp_key: str | None,
-    sudo: bool,
+    username: str | None = None,
+    password: str | None = None,
+    *,
+    totp_key: str | None = None,
+    sudo: bool = False,
 ) -> None:
     if (totp_key is not None) and (pyotp is None):
         print('--totp-key requires pyotp!', file=sys.stderr)
@@ -237,7 +229,6 @@ def main(
         f'--user={saml_username}',
         '--usergroup=gateway:prelogin-cookie',
         '--passwd-on-stdin',
-        *openconnect_args,
     ]
 
     if sudo:
@@ -248,5 +239,11 @@ def main(
     sys.exit(p.returncode)
 
 
+def cli():
+    import typer
+
+    typer.run(main)
+
+
 if __name__ == '__main__':
-    main()
+    cli()
