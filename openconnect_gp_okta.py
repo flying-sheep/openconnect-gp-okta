@@ -3,6 +3,7 @@
 OpenConnect wrapper which logs into a GlobalProtect gateway,
 authenticating with Okta.
 """
+from __future__ import annotations
 
 import base64
 import contextlib
@@ -15,7 +16,9 @@ import subprocess
 import sys
 import urllib.parse
 import uuid
-from typing import Any, Callable, ContextManager, Optional, Tuple
+from collections.abc import Callable
+from contextlib import AbstractContextManager
+from typing import Any
 
 import click
 import keyring
@@ -36,7 +39,7 @@ def check(r: requests.Response) -> requests.Response:
     return r
 
 
-def extract_form(html: bytes) -> Tuple[str, dict[str, str]]:
+def extract_form(html: bytes) -> tuple[str, dict[str, str]]:
     form = lxml.etree.fromstring(html, lxml.etree.HTMLParser()).find('.//form')
     return (
         form.attrib['action'],
@@ -68,7 +71,7 @@ def okta_auth(
     domain: str,
     username: str,
     password: str,
-    totp_key: Optional[str],
+    totp_key: str | None,
 ) -> str:
     r = post_json(
         s,
@@ -129,8 +132,8 @@ def okta_saml(
     saml_req_url: str,
     username: str,
     password: str,
-    totp_key: Optional[str],
-) -> Tuple[str, dict[str, str]]:
+    totp_key: str | None,
+) -> tuple[str, dict[str, str]]:
     domain = urllib.parse.urlparse(saml_req_url).netloc
 
     # Just to set DT cookie
@@ -151,7 +154,7 @@ def okta_saml(
 
 def complete_saml(
     s: requests.Session, saml_resp_url: str, saml_resp_data: dict[str, str]
-) -> Tuple[str, str]:
+) -> tuple[str, str]:
     r = check(s.post(saml_resp_url, data=saml_resp_data))
     return r.headers['saml-username'], r.headers['prelogin-cookie']
 
@@ -166,7 +169,9 @@ def signal_mask(how: int, mask: set[signal.Signals]) -> set[signal.Signals]:
 
 
 @contextlib.contextmanager
-def signal_handler(num: signal.Signals, handler: Callable) -> ContextManager[Callable]:
+def signal_handler(
+    num: signal.Signals, handler: Callable
+) -> AbstractContextManager[Callable]:
     old_handler = signal.signal(num, handler)
     try:
         yield old_handler
@@ -177,7 +182,7 @@ def signal_handler(num: signal.Signals, handler: Callable) -> ContextManager[Cal
 @contextlib.contextmanager
 def popen_forward_sigterm(
     args: list[str], *, stdin=None
-) -> ContextManager[subprocess.Popen]:
+) -> AbstractContextManager[subprocess.Popen]:
     with signal_mask(signal.SIG_BLOCK, {signal.SIGTERM}) as old_mask:
         with subprocess.Popen(
             args,
@@ -202,9 +207,9 @@ def popen_forward_sigterm(
 def main(
     gateway: str,
     openconnect_args: list[str],
-    username: Optional[str],
-    password: Optional[str],
-    totp_key: Optional[str],
+    username: str | None,
+    password: str | None,
+    totp_key: str | None,
     sudo: bool,
 ) -> None:
     if (totp_key is not None) and (pyotp is None):
